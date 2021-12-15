@@ -14,7 +14,6 @@ class MainFrame(Frame):
 
         #   Crear un hilo para obtener los datos desde el arduino
         self.hilo1  =   threading.Thread(target=self.getValues, daemon=True)
-        self.estados=   threading.Thread(target=self.getEstados, daemon=True)
 
         #   Comunicacion con el arduino
         self.arduino    =   serial.Serial(puerto, 9600, timeout=1.0)
@@ -35,20 +34,28 @@ class MainFrame(Frame):
 
         self.hilo1.start()
         self.create_widgets()
+        self.fnIdle()
 
-    def getEstados(self):
-        pass
+    def fnIdle(self):
+        self.arduino.write("verde:1".encode("ascii"))
+        self.fnSemaforo((1,0,0))
+
 
     def fnEnviarEmergencia(self):
         self.value_rojo     =   self.value_emergencia.get()
         self.value_amarillo =   self.value_emergencia
         self.value_verde    =   self.value_emergencia
 
-        self.fnSemaforo(self.value_emergencia.get())
         if (self.value_emergencia.get()):
             self.value_estado.set("EMERGENCIA")
+            self.arduino.write("emergencia:1".encode("ascii"))
+            time.sleep(1.1)
+            self.fnSemaforo((1,1,1))
         else:
             self.value_estado.set("En linea")
+            self.arduino.write("emergencia:0".encode("ascii"))
+            time.sleep(1.1)
+            self.fnIdle()
 
     #   Funcion que obtiene los valores desde arduino
     #       label:value
@@ -82,15 +89,23 @@ class MainFrame(Frame):
         print('***FINALIZANDO...')
 
 
-    def fnSemaforo(self, emergencia):
+    def fnSemaforo(self, semaforo):
         #   Semaforo
-        if emergencia:
+        #   VERDE
+        if(semaforo[0]):
             Label(self, bg="green", width=3, heigh=1).place(x=150, y=60)
-            Label(self, bg="yellow", width=3, heigh=1).place(x=200, y=60)
-            Label(self, bg="red", width=3, heigh=1).place(x=250, y=60)
         else:
             Label(self, bg="gray", width=3, heigh=1).place(x=150, y=60)
+        #   AMARILLO
+        if(semaforo[1]):
+            Label(self, bg="yellow", width=3, heigh=1).place(x=200, y=60)
+        else:
             Label(self, bg="gray", width=3, heigh=1).place(x=200, y=60)
+
+        #   ROJO
+        if(semaforo[2]):
+            Label(self, bg="red", width=3, heigh=1).place(x=250, y=60)
+        else:
             Label(self, bg="gray", width=3, heigh=1).place(x=250, y=60)
 
         
@@ -102,7 +117,6 @@ class MainFrame(Frame):
 
         #   Semaforo
         Label(self, text="Semaforo", font=(None, 10)).place(x=30, y=60)
-        self.fnSemaforo(self.value_emergencia.get())
 
         #   Sensores
         Label(self, text="Sensores", font=(None, 12, 'bold')).place(x=30, y=100)

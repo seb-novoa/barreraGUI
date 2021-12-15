@@ -1,9 +1,8 @@
 /*
- * Se cambian los sensores de proximidad utrasonicos por sensores 
- * infrarrojos
  * 
- *  -Se los mensaje para la comunicacion serial hacia la gui
- *  -Incorporar funcion lectora desde al gui
+ *  -Se cambia la logica del programa para que la interfaz 
+ *    manejen las secuencias
+ *  + Los sensores no estan respondiendo
 */
 
 
@@ -27,7 +26,7 @@
    * BOTON DE EMERGENCIA
    * btn      11
 */
-
+#include <Ticker.h>
 
 //  barrera
 #include <Servo.h>
@@ -60,106 +59,65 @@ static  long  tiempo_amarillo = 0;
 //  Variables 
 bool ingresa  = false;
 
+void fnSensor_vias(){
+  if (!digitalRead(sensor1)){
+    Serial.println("sensor1:1");
+  }
+  if (!digitalRead(sensor2)){
+    Serial.println("sensor2:1");
+  }
+}
+Ticker ticSensor_vias(fnSensor_vias, 500);
+
 void setup() {
+  Serial.begin(9600);
+  delay(30);
+  
+  // Salidas
+  pinMode(VERDE, OUTPUT);
+  pinMode(AMARILLO, OUTPUT);
+  pinMode(ROJO, OUTPUT);
   pinMode(BUZZER, OUTPUT);
   barrera.attach(9);
   
-  
-  Serial.begin(9600);
-  delay(30);
-  subirBarrera();
+  //subirBarrera();
+
+  ticSensor_vias.start();
 }
 
-void loop() {
-  //  Mostrar los estados de los sensores de vias
-  Serial.print(digitalRead(btn));
-  Serial.println("");
+void fnActuadores(String cad){
+  int pos;
+  String label, value;
+  cad.trim();
+  cad.toLowerCase();
+  Serial.println(cad);
 
-  //  Boton de emergencia
-  if(digitalRead(btn)){
-    delay(250);
-    if(digitalRead(btn)){
-      Serial.println("emergencia:" + emergencia);
-      emergencia = !emergencia;
-      if(!emergencia){
-        subirBarrera();
-      }
-      else{
-        digitalWrite(BUZZER, LOW);
-      } 
+  pos = cad.indexOf(':');
+  label = cad.substring(0, pos);
+  value = cad.substring(pos + 1);
+
+  //  Funciones
+  if(label.equals("emergencia")){
+    if(value.equals("1")){
+      digitalWrite(VERDE, HIGH);
+      digitalWrite(AMARILLO, HIGH);
+      digitalWrite(ROJO, HIGH);
     }
-    delay(1000);
   }
 
-  //  secuencia de emergencia
-  if(emergencia){
-    digitalWrite(ROJO, HIGH);
-    digitalWrite(AMARILLO, HIGH);
+  if(label.equals("verde")){
     digitalWrite(VERDE, HIGH);
+    digitalWrite(AMARILLO, LOW);
+    digitalWrite(ROJO, LOW);
   }
-  //  Secuencia de barrera
-  else{
-    //  Sensor en via - Ingreso del tren
-    if(!digitalRead(sensor1)){
-      if(!ingresa){
-        ingresa = true;
-        tiempo_amarillo = millis();
-      }
-    }
-  
-    //  Sensor en via - Partida del tren 
-    if(!digitalRead(sensor2)){
-      subirBarrera();
-    }
-  
-    if(ingresa){
-      long hora = millis();
-      
-      // Secuencia buzzer
-      if(hora - tiempo_buzzer > 250){
-        estado_buzzer = !estado_buzzer;
-        tiempo_buzzer = hora;
-        digitalWrite(BUZZER, estado_buzzer);
-      }
-  
-      //  Secuencia de luces y barrera
-      if(!estado_amarillo){
-        estado_amarillo = true;
-        digitalWrite(VERDE, LOW);
-        digitalWrite(AMARILLO, HIGH);
-      }
-      if(hora - tiempo_amarillo > 3000){
-        digitalWrite(AMARILLO, LOW);
-        digitalWrite(ROJO, HIGH);
-        
-        //  bajando barrera
-        if(!digitalRead(sensor3)){
-          barrera.write(95);
-        }
-      }
-      
-      
-    }
-    else{
-      subirBarrera();
-    }
-  }
+
 }
 
-void subirBarrera(){
-  ingresa = false;
-  estado_amarillo = false;
 
-  barrera.write(5);
-  
-  digitalWrite(BUZZER, LOW);
-  
-  digitalWrite(VERDE, HIGH);
-  Serial.println("verde:1");
-  
-  digitalWrite(AMARILLO, LOW);
-  Serial.println("amarillo:0");
-  
-  digitalWrite(ROJO, LOW);
-  Serial.println("rojo:0");
+
+void loop(){
+  //ticSensor_vias.update();
+  if(Serial.available()){
+    fnActuadores(Serial.readString());
+  }
 }
