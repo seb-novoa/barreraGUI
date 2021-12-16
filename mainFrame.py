@@ -20,7 +20,7 @@ class MainFrame(Frame):
         time.sleep(1)
 
         #   Variables de sistema
-        self.isRun      =   False
+        self.isRun      =   True
         self.value_estado = StringVar(value = "En linea")
 
 
@@ -31,12 +31,16 @@ class MainFrame(Frame):
         self.value_rojo     =   IntVar().set(0)
         self.value_amarillo =   IntVar().set(0)
         self.value_verde    =   IntVar().set(0)
+        self.value_sensor1  =   IntVar()
+        self.value_sensor2  =   IntVar().set(0)
+        self.value_sensor3  =   IntVar().set(0)
 
         self.hilo1.start()
-        self.create_widgets()
         self.fnIdle()
+        self.create_widgets()
 
     def fnIdle(self):
+        print('Barrera a la espera')
         self.arduino.write("verde:1".encode("ascii"))
         self.fnSemaforo((1,0,0))
 
@@ -68,15 +72,20 @@ class MainFrame(Frame):
                 value    =   cad[pos+1:]
 
                 #    Asignando los valores a su respectiva variables
-                if label == 'rojo':
-                    self.value_rojo.set(value)
-                    print('rojo:' + value)
-                if label == 'amarillo':
-                    self.value_amarillo.set(value)
-                    print('amarillo:' + value)
-                if label == 'verde':
-                    self.value_verde.set(value)
-                    print('verde:' + value)
+                #if label == 'rojo':
+                #    self.value_rojo.set(value)
+                #    print('rojo:' + value)
+                #if label == 'amarillo':
+                #    self.value_amarillo.set(value)
+                #    print('amarillo:' + value)
+                #if label == 'verde':
+                #    self.value_verde.set(value)
+                #    print('verde:' + value)
+                # Sensores
+                if label == 'sensor1':
+                    self.value_sensor1.set(value)
+                    if value == 1 :
+                       print('Tren detectado')
 
     #   Funcion de cierre
     def askQuit(self):
@@ -122,11 +131,14 @@ class MainFrame(Frame):
         Label(self, text="Sensores", font=(None, 12, 'bold')).place(x=30, y=100)
         Label(self, text="En vias").place(x=30, y=130)
         Label(self, text="sensor 1:").place(x=30, y=150)
+        Label(self, textvariable=self.value_sensor1).place(x=95, y=150)
         #   Estado del sensor desde arduino
         Label(self, text="sensor 2:").place(x=120, y=150)
+        Label(self, text="0",textvariable=self.value_sensor2).place(x=185, y=150)
         #   Estado del sensor 2 desde el arduino
         Label(self, text="En barrera").place(x=230, y=130)
         Label(self, text="sensor 3:").place(x=230, y=150)
+        Label(self, text="0",textvariable=self.value_sensor3).place(x=295, y=150)
 
         #   Emergencia
         Checkbutton(self,

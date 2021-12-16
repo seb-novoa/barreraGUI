@@ -35,7 +35,7 @@ Servo barrera;
 //  Sensores de vias
 #define sensor1 3
 #define sensor2 4
-
+int value_sensor1 = 0;
 //  Sensor en barrera
 #define sensor3 10
 
@@ -59,13 +59,23 @@ static  long  tiempo_amarillo = 0;
 //  Variables 
 bool ingresa  = false;
 
+
 void fnSensor_vias(){
   if (!digitalRead(sensor1)){
-    Serial.println("sensor1:1");
+    int sensor = digitalRead(sensor1);
+    if(value_sensor1 != sensor){
+      value_sensor1 = sensor;
+      Serial.println("sensor1:1");
+    }
   }
-  if (!digitalRead(sensor2)){
-    Serial.println("sensor2:1");
+  else{
+    int sensor = digitalRead(sensor1);
+    if(value_sensor1 != sensor){
+      value_sensor1 = sensor;
+      Serial.println("sensor1:0");
+    }
   }
+
 }
 Ticker ticSensor_vias(fnSensor_vias, 500);
 
@@ -90,7 +100,6 @@ void fnActuadores(String cad){
   String label, value;
   cad.trim();
   cad.toLowerCase();
-  Serial.println(cad);
 
   pos = cad.indexOf(':');
   label = cad.substring(0, pos);
@@ -116,7 +125,7 @@ void fnActuadores(String cad){
 
 
 void loop(){
-  //ticSensor_vias.update();
+  ticSensor_vias.update();
   if(Serial.available()){
     fnActuadores(Serial.readString());
   }
